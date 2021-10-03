@@ -6,9 +6,16 @@ namespace WasmEdge {
 namespace Host {
 namespace WASI {
 namespace Crypto {
-HandleMangers::HandleMangers() {}
+HandleMangers::HandleMangers() : ArrayOutputManger{0x00} {}
 
 CryptoCtx::CryptoCtx() {}
+
+WasiCryptoExpect<__wasi_size_t>
+CryptoCtx::arrayOutputLen(__wasi_array_output_t ArrayOutputHandle) {
+  auto ArrayOutput = Mangers.ArrayOutputManger.get(ArrayOutputHandle);
+  return ArrayOutput->len();
+}
+
 } // namespace Crypto
 } // namespace WASI
 } // namespace Host
