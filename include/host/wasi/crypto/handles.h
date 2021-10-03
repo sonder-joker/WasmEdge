@@ -157,7 +157,7 @@ public:
     return Handle;
   }
 
-  WasiCryptoExpect<Handle> get(Handle Handle) {
+  WasiCryptoExpect<HandleType> get(Handle Handle) {
     std::lock_guard Guard{Mutex};
     auto HandleValue = Map.find(Handle);
     if (HandleValue != Map.end()) {
