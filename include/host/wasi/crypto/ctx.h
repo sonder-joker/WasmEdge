@@ -8,9 +8,12 @@ namespace Host {
 namespace WASI {
 namespace Crypto {
 
+class HandleMangers {
+};
+
 class CryptoCtx {
 public:
-    CryptoCtx();
+  CryptoCtx();
 };
 
 } // namespace Crypto
