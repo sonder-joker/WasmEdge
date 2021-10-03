@@ -1,6 +1,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 wasmedge_add_library(wasmedgeHostModuleWasiCrypto
+  ctx.cpp
 )
 
 target_include_directories(wasmedgeHostModuleWasiCrypto
