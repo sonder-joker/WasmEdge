@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 #pragma once
 
+#include "host/wasi/crypto/handles.h"
 
 namespace WasmEdge {
 namespace Host {
