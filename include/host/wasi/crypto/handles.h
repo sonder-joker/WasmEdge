@@ -118,7 +118,7 @@ template <class T, std::enable_if_t<std::is_unsigned_v<T>, int> = 0>
 
 } // namespace
 
-using Handle = uint32_t;
+using Handle = int32_t;
 
 // HandleType: Clone + Send + Sync(rust)
 template <typename HandleType> class HandlesManger {
