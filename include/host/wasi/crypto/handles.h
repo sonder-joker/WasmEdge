@@ -139,7 +139,7 @@ public:
     return {};
   }
 
-  WasiCryptoExpect<Handle> registe(HandleType InputType) {
+  WasiCryptoExpect<Handle> registerModule(HandleType InputType) {
     std::lock_guard Guard{Mutex};
     auto NextHandle = nextHandle(LastHandle);
 
