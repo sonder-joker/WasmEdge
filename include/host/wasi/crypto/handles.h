@@ -4,6 +4,7 @@
 #include "host/wasi/crypto/error.h"
 #include "wasi/crypto/api.hpp"
 
+#include <climits>
 #include <mutex>
 #include <unordered_map>
 
@@ -63,7 +64,7 @@ template <typename UnsignedType> struct WrapToSignedHelper {
 template <typename UnsignedType>
 constexpr typename WrapToSignedHelper<UnsignedType>::SignedType
 WrapToSigned(UnsignedType aValue) {
-  return detail::WrapToSignedHelper<UnsignedType>::compute(aValue);
+  return WrapToSignedHelper<UnsignedType>::compute(aValue);
 }
 template <typename T> constexpr T ToResult(std::make_unsigned_t<T> aUnsigned) {
   // We could *always* return WrapToSigned and rely on unsigned conversion to
@@ -86,10 +87,10 @@ template <typename T> constexpr T WrappingAdd(T aX, T aY) {
 
 // from MSVC STL
 template <class T, std::enable_if_t<std::is_unsigned_v<T>, int> = 0>
-[[NODISCARD]] constexpr T rotr(T _Val, int _Rotation) noexcept;
+[[nodiscard]] constexpr T rotr(T _Val, int _Rotation) noexcept;
 
 template <class T, std::enable_if_t<std::is_unsigned_v<T>, int> = 0>
-[[NODISCARD]] constexpr T rotl(const T Val, const int Rotation) noexcept {
+[[nodiscard]] constexpr T rotl(const T Val, const int Rotation) noexcept {
   constexpr auto Digits = std::numeric_limits<T>::digits;
   const auto Remainder = Rotation % Digits;
   if (Remainder > 0) {
@@ -102,8 +103,8 @@ template <class T, std::enable_if_t<std::is_unsigned_v<T>, int> = 0>
   }
 }
 
-template <class T, std::enable_if_t<std::is_unsigned_v<T>, int> = 0>
-[[NODISCARD]] constexpr T rotr(const T Val, const int Rotation) noexcept {
+template <class T, std::enable_if_t<std::is_unsigned_v<T>, int> Enabled>
+[[nodiscard]] constexpr T rotr(const T Val, const int Rotation) noexcept {
   constexpr auto Digits = std::numeric_limits<T>::digits;
   const auto Remainder = Rotation % Digits;
   if (Remainder > 0) {
@@ -118,7 +119,7 @@ template <class T, std::enable_if_t<std::is_unsigned_v<T>, int> = 0>
 
 } // namespace
 
-using Handle = int32_t;
+using Handle = uint32_t;
 
 // HandleType: Clone + Send + Sync(rust)
 template <typename HandleType> class HandlesManger {
@@ -131,46 +132,47 @@ public:
   HandlesManger(uint8_t TypeId)
       : LastHandle{rotr(static_cast<Handle>(TypeId), 8)}, TypeId{TypeId} {}
 
-  WasiCryptoExpect<void> close(Handle Handle) {
+  WasiCryptoExpect<void> close(Handle InputHandle) {
     std::lock_guard Guard{Mutex};
-    return Map.erase(Handle) ? {}
-                             : WasiCryptoUnexpect(__WASI_CRYPTO_ERRNO_CLOSED);
+    if (!Map.erase(InputHandle))
+      return WasiCryptoUnexpect(__WASI_CRYPTO_ERRNO_CLOSED);
+    return {};
   }
 
-  WasiCryptoExpect<Handle> registe(HandleType Type) {
+  WasiCryptoExpect<Handle> registe(HandleType InputType) {
     std::lock_guard Guard{Mutex};
-    auto Handle = nextHandle(LastHandle);
+    auto NextHandle = nextHandle(LastHandle);
 
     while (true) {
-      if (Map.find(Handle) == Map.end()) {
+      if (Map.find(NextHandle) == Map.end()) {
         break;
       }
-      if (Handle == LastHandle) {
+      if (NextHandle == LastHandle) {
         return WasiCryptoUnexpect(__WASI_CRYPTO_ERRNO_TOO_MANY_HANDLES);
       }
-      Handle = nextHandle(LastHandle);
+      NextHandle = nextHandle(LastHandle);
     }
-    LastHandle = Handle;
-    if (!Map.insert({Handle, Type}).second) {
+    LastHandle = NextHandle;
+    if (!Map.insert({NextHandle, InputType}).second) {
       return WasiCryptoUnexpect(__WASI_CRYPTO_ERRNO_INTERNAL_ERROR);
     }
-    return Handle;
+    return NextHandle;
   }
 
-  WasiCryptoExpect<HandleType> get(Handle Handle) {
+  WasiCryptoExpect<HandleType> get(Handle InputHandle) {
     std::lock_guard Guard{Mutex};
-    auto HandleValue = Map.find(Handle);
-    if (HandleValue != Map.end()) {
-      return HandleValue;
-    } else {
+    auto HandleValue = Map.find(InputHandle);
+    if (HandleValue == Map.end()) {
       return WasiCryptoUnexpect(__WASI_CRYPTO_ERRNO_INVALID_HANDLE);
     }
+    return HandleValue;
   }
 
 private:
-  Handle nextHandle(Handle Handle){
-      return ((WrappingAdd(Handle, 1) << 8) |
-              rotr(static_cast<Handle>(TypeId), 8))}
+  Handle nextHandle(Handle InputHandle) {
+    auto AddedValue = WrappingAdd(InputHandle, 1u) << 8;
+    return rotr(AddedValue | static_cast<Handle>(TypeId), 8);
+  }
 
   std::mutex Mutex;
   Handle LastHandle;
