@@ -165,7 +165,7 @@ public:
     if (HandleValue == Map.end()) {
       return WasiCryptoUnexpect(__WASI_CRYPTO_ERRNO_INVALID_HANDLE);
     }
-    return HandleValue;
+    return HandleValue->second;
   }
 
 private:
