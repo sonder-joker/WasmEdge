@@ -9,11 +9,14 @@ namespace WASI {
 namespace Crypto {
 
 struct HandleMangers {
+  HandleMangers();
 };
 
 class CryptoCtx {
 public:
   CryptoCtx();
+private:
+  HandleMangers Mangers;
 };
 
 } // namespace Crypto

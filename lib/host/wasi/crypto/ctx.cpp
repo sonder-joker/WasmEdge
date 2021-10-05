@@ -6,8 +6,9 @@ namespace WasmEdge {
 namespace Host {
 namespace WASI {
 namespace Crypto {
-CryptoCtx::CryptoCtx() {}
+HandleMangers::HandleMangers() {}
 
+CryptoCtx::CryptoCtx() {}
 } // namespace Crypto
 } // namespace WASI
 } // namespace Host
