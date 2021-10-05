@@ -8,7 +8,7 @@ namespace Host {
 namespace WASI {
 namespace Crypto {
 
-class HandleMangers {
+struct HandleMangers {
 };
 
 class CryptoCtx {
